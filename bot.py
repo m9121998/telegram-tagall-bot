@@ -30,7 +30,7 @@ async def tagall(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 # Hàm chạy bot (không cần asyncio.run)
 async def main():
-    app = ApplicationBuilder().token("YOUR_TELEGRAM_BOT_TOKEN").build()
+    app = ApplicationBuilder().token("8179738384:AAEgHjuelNihVY2tZYMG4aOz5iUZjvEeOeA").build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("tagall", tagall))
