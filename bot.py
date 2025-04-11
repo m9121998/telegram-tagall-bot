@@ -1,7 +1,6 @@
 import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-import asyncio
 
 # Setup logging
 logging.basicConfig(
@@ -28,24 +27,14 @@ async def tagall(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     await update.message.reply_text(tags, parse_mode='Markdown')
 
-# Hàm chạy bot (không cần asyncio.run)
-async def main():
+# Main function (chạy bot)
+def main():
     app = ApplicationBuilder().token("8179738384:AAEgHjuelNihVY2tZYMG4aOz5iUZjvEeOeA").build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("tagall", tagall))
 
-    await app.initialize()
-    await app.start()
-    await app.updater.start_polling()
-    await app.updater.idle()
+    app.run_polling()
 
-# Kiểm tra nếu chạy trực tiếp file thì chạy bot
 if __name__ == '__main__':
-    try:
-        asyncio.get_event_loop().run_until_complete(main())
-    except RuntimeError as e:
-        # fallback nếu event loop đã chạy (Render hoặc notebook)
-        loop = asyncio.get_event_loop()
-        loop.create_task(main())
-        loop.run_forever()
+    main()
