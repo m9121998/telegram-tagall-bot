@@ -21,7 +21,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Hàm main để khởi chạy bot
 async def main():
     # Tạo ứng dụng với token Telegram Bot của bạn
-    app = ApplicationBuilder().token("YOUR_BOT_TOKEN_HERE").build()
+    app = ApplicationBuilder().token("8179738384:AAEgHjuelNihVY2tZYMG4aOz5iUZjvEeOeA").build()
 
     # Xóa webhook cũ (nếu có)
     await app.bot.delete_webhook(drop_pending_updates=True)
