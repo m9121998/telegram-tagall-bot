@@ -44,7 +44,7 @@ async def tag_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Chạy app trong môi trường đã có event loop (Render, Jupyter, v.v.)
 def main():
-    app = ApplicationBuilder().token("YOUR_BOT_TOKEN_HERE").build()
+    app = ApplicationBuilder().token("8179738384:AAEgHjuelNihVY2tZYMG4aOz5iUZjvEeOeA").build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("tagall", tag_all))
