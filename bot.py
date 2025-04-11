@@ -5,7 +5,6 @@ from telegram.ext import (
     CommandHandler,
     ContextTypes,
 )
-import asyncio
 
 # Cấu hình log
 logging.basicConfig(
@@ -27,8 +26,9 @@ async def tag_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
+        admins = await context.bot.get_chat_administrators(chat.id)
         members = []
-        async for member in context.bot.get_chat_administrators(chat.id):
+        for member in admins:
             if not member.user.is_bot:
                 members.append(member.user)
     except Exception as e:
@@ -42,7 +42,7 @@ async def tag_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Không tìm thấy ai để tag.")
 
-# Chạy app trong môi trường đã có event loop (Render, Jupyter, v.v.)
+# Hàm khởi chạy bot
 def main():
     app = ApplicationBuilder().token("8179738384:AAEgHjuelNihVY2tZYMG4aOz5iUZjvEeOeA").build()
 
@@ -50,7 +50,7 @@ def main():
     app.add_handler(CommandHandler("tagall", tag_all))
 
     logger.info("Bot đang chạy...")
-    app.run_polling()  # Không dùng asyncio.run nữa
+    app.run_polling()
 
 if __name__ == '__main__':
     main()
