@@ -1,11 +1,11 @@
 import logging
-import asyncio
-from telegram import Update, ChatMember, Chat
+from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
     ContextTypes,
 )
+import asyncio
 
 # Cấu hình log
 logging.basicConfig(
@@ -22,12 +22,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def tag_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat = update.effective_chat
 
-    # Kiểm tra xem bot có đang hoạt động trong group không
     if chat.type not in ["group", "supergroup"]:
         await update.message.reply_text("Lệnh này chỉ hoạt động trong nhóm.")
         return
 
-    # Lấy danh sách thành viên (chỉ hoạt động với bot có quyền admin + trong nhóm public/supergroup)
     try:
         members = []
         async for member in context.bot.get_chat_administrators(chat.id):
@@ -38,28 +36,21 @@ async def tag_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Không thể lấy danh sách thành viên. Hãy đảm bảo bot là admin.")
         return
 
-    # Ghép tên để tag
-    tag_text = " ".join([f"@{user.username}" if user.username else f"{user.first_name}" for user in members])
-
+    tag_text = " ".join([f"@{user.username}" if user.username else user.first_name for user in members])
     if tag_text:
         await update.message.reply_text(f"Tag mọi người nè:\n{tag_text}")
     else:
         await update.message.reply_text("Không tìm thấy ai để tag.")
 
-# Hàm main
-async def main():
-    app = ApplicationBuilder().token("8179738384:AAEgHjuelNihVY2tZYMG4aOz5iUZjvEeOeA").build()
+# Chạy app trong môi trường đã có event loop (Render, Jupyter, v.v.)
+def main():
+    app = ApplicationBuilder().token("YOUR_BOT_TOKEN_HERE").build()
 
-    # Xóa webhook cũ (nếu có)
-    await app.bot.delete_webhook(drop_pending_updates=True)
-
-    # Thêm các command handler
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("tagall", tag_all))
 
     logger.info("Bot đang chạy...")
-    await app.run_polling()
+    app.run_polling()  # Không dùng asyncio.run nữa
 
-# Chạy main
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
