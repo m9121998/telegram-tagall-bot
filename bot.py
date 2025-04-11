@@ -1,33 +1,41 @@
 import logging
-import asyncio
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
-import os
+from telegram.ext import (
+    ApplicationBuilder, CommandHandler, MessageHandler, filters,
+    ContextTypes, ChatMemberHandler
+)
 
-# Đăng nhập log
+# Cấu hình log
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-# Danh sách member_id lưu tạm
+# Tạm thời lưu ID thành viên trong bộ nhớ RAM
 member_ids = set()
 
-# Khi bot khởi động hoặc khi lệnh /start được gọi
+# Lưu thành viên khi họ gửi tin nhắn
+async def save_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.type in ["group", "supergroup"]:
+        user = update.effective_user
+        if not user.is_bot:
+            member_ids.add(user.id)
+
+# Lưu thành viên khi họ vào nhóm
+async def track_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    member = update.chat_member.new_chat_member
+    if not member.user.is_bot:
+        member_ids.add(member.user.id)
+
+# Lệnh /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Bot đã sẵn sàng. Dùng /tagall để tag mọi người!")
+    await update.message.reply_text("Xin chào! Tôi sẽ ghi nhớ thành viên và có thể tag tất cả bằng /tagall.")
 
-# Hàm khi bot nhận thành viên mới
-async def collect_members(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    for member in update.message.new_chat_members:
-        if not member.is_bot:
-            member_ids.add(member.id)
-            logger.info(f"Đã thêm thành viên: {member.full_name} (ID: {member.id})")
-
-# Hàm /tagall
+# Lệnh /tagall
 async def tag_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type not in ["group", "supergroup"]:
-        await update.message.reply_text("Lệnh này chỉ dùng trong nhóm.")
+        await update.message.reply_text("Lệnh này chỉ dùng được trong nhóm.")
         return
 
     tags = []
@@ -42,7 +50,7 @@ async def tag_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     name = user.full_name.replace("[", "").replace("]", "")
                     tags.append(f"[{name}](tg://user?id={user.id})")
         except Exception as e:
-            logger.warning(f"Không lấy được thành viên {user_id}: {e}")
+            logger.warning(f"Không lấy được thông tin thành viên {user_id}: {e}")
 
     if tags:
         tag_text = "Tag tất cả nè:\n" + "\n".join(tags)
@@ -50,25 +58,19 @@ async def tag_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Chưa có ai để tag 😅. Hãy để mọi người tương tác trước.")
 
-# Hàm chính để chạy bot
-async def main():
-    TOKEN = os.getenv("BOT_TOKEN") or "8179738384:AAEgHjuelNihVY2tZYMG4aOz5iUZjvEeOeA"
-    app = Application.builder().token(TOKEN).build()
-
-    # Xóa webhook nếu đang deploy ở môi trường hỗ trợ polling (như local)
-    await app.bot.delete_webhook()
+# Hàm main chạy bot
+def main():
+    app = ApplicationBuilder().token("8179738384:AAEgHjuelNihVY2tZYMG4aOz5iUZjvEeOeA").build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("tagall", tag_all))
-    app.add_handler(CommandHandler("restart", start))
-    app.add_handler(CommandHandler("help", start))
 
-    # Lắng nghe thành viên mới
-    from telegram.ext import MessageHandler, filters
-    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, collect_members))
+    # Theo dõi tin nhắn & thành viên mới
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, save_user))
+    app.add_handler(ChatMemberHandler(track_new_member, ChatMemberHandler.CHAT_MEMBER))
 
     logger.info("Bot đang chạy...")
-    await app.run_polling()
+    app.run_polling()
 
-if __name__ == "__main__":
-    asyncio.run(main())
+if __name__ == '__main__':
+    main()
